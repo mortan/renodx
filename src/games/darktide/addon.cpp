@@ -505,7 +505,11 @@ BOOL APIENTRY DllMain(HMODULE h_module, DWORD fdw_reason, LPVOID lpv_reserved) {
       renodx::utils::resource::use_d3d12_buffer_view_tracking = false;
 
       // renodx::utils::descriptor::trace_descriptor_tables = true;
-      renodx::utils::shader::use_shader_cache = true;
+      // Custom shaders are runtime replacements (force_pipeline_cloning), built at
+      // init_pipeline from the subobjects ReShade passes in. The cache would copy
+      // every pipeline's subobjects, keep them after destroy and rebuild failed
+      // replacements on every draw.
+      // renodx::utils::shader::use_shader_cache = true;
       // renodx::mods::shader::use_pipeline_layout_cloning = false;
 
       renodx::mods::swapchain::resource_upgrade_infos.push_back({
