@@ -89,6 +89,19 @@ SamplerState LutSampler : register(s4);
 SamplerState DepthSampler : register(s5);
 #define TONEMAPPER_AMD_LPM_PACKOFFSET c012.x
 #define TONEMAPPER_INPUT_SIZE_PACKOFFSET c011.x
+#elif defined(TONEMAPPER_LAYOUT_MINIMAL_EXTRA1_COLOR_FILTER)
+// t0 scene, t1 extra, t2 LUT, t3 exposure; c0 includes color filter fields
+Texture2D<float4> SceneTexture : register(t0);
+Texture2D<float4> ExtraTexture0 : register(t1);
+Texture3D<float4> LutTexture : register(t2);
+Texture2D<float> ExposureTexture : register(t3);
+SamplerState SceneSampler : register(s0);
+SamplerState ExtraSampler0 : register(s1);
+SamplerState LutSampler : register(s2);
+#define TONEMAPPER_AMD_LPM_PACKOFFSET c013.x
+// No global_viewport, so the constant buffers start at b0
+#define TONEMAPPER_ENVIRONMENT_REGISTER b0
+#define TONEMAPPER_C0_REGISTER b1
 #elif defined(TONEMAPPER_LAYOUT_MINIMAL_COLOR_FILTER)
 // t0 scene, t1 LUT, t2 exposure; c0 includes color filter fields
 Texture2D<float4> SceneTexture : register(t0);
