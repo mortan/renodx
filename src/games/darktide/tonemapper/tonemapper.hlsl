@@ -97,6 +97,9 @@ Texture2D<float> ExposureTexture : register(t2);
 SamplerState SceneSampler : register(s0);
 SamplerState LutSampler : register(s1);
 #define TONEMAPPER_AMD_LPM_PACKOFFSET c013.x
+// No global_viewport, so the constant buffers start at b0
+#define TONEMAPPER_ENVIRONMENT_REGISTER b0
+#define TONEMAPPER_C0_REGISTER b1
 #elif defined(TONEMAPPER_LAYOUT_MINIMAL)
 // t0 scene, t1 LUT, t2 exposure
 Texture2D<float4> SceneTexture : register(t0);
@@ -105,17 +108,27 @@ Texture2D<float> ExposureTexture : register(t2);
 SamplerState SceneSampler : register(s0);
 SamplerState LutSampler : register(s1);
 #define TONEMAPPER_AMD_LPM_PACKOFFSET c011.x
+// No global_viewport, so the constant buffers start at b0
+#define TONEMAPPER_ENVIRONMENT_REGISTER b0
+#define TONEMAPPER_C0_REGISTER b1
 #else
 #error Define a TONEMAPPER_LAYOUT_* permutation before including tonemapper.hlsl.
 #endif
 
+#ifndef TONEMAPPER_ENVIRONMENT_REGISTER
+#define TONEMAPPER_ENVIRONMENT_REGISTER b1
+#define TONEMAPPER_C0_REGISTER b2
+#endif
+
+#if TONEMAPPER_USE_GLARE
 cbuffer global_viewport : register(b0) {
   float3 camera_pos : packoffset(c001.x);
   float4 camera_world[4] : packoffset(c010.x);
   float4 camera_view_projection[4][2] : packoffset(c074.x);
 };
+#endif
 
-cbuffer global_environment_settings : register(b1) {
+cbuffer global_environment_settings : register(TONEMAPPER_ENVIRONMENT_REGISTER) {
   float tonemap_use_custom : packoffset(c021.w);
   float tonemap_slope : packoffset(c022.x);
   float tonemap_toe : packoffset(c022.y);
@@ -124,7 +137,7 @@ cbuffer global_environment_settings : register(b1) {
   float tonemap_white_clip : packoffset(c023.x);
 };
 
-cbuffer c0 : register(b2) {
+cbuffer c0 : register(TONEMAPPER_C0_REGISTER) {
   float3 bloom_threshold_offset_falloff : packoffset(c004.x);
   float3 vignette_scale_falloff_opacity : packoffset(c005.x);
   float3 vignette_color : packoffset(c006.x);
@@ -195,6 +208,7 @@ float3 BloomAdd(float3 bloom_color) {
          max(bloom_threshold_offset_falloff.y - Luma709(bloom_color), EPS);
 }
 
+#if TONEMAPPER_USE_GLARE
 float2 ProjectWorldToScreen(float3 world_position,
                             bool use_primary_projection) {
   float4 row_x = use_primary_projection ? camera_view_projection[0][0]
@@ -207,6 +221,7 @@ float2 ProjectWorldToScreen(float3 world_position,
   float2 ndc = float2(dot(world, row_x), dot(world, row_y)) / dot(world, row_w);
   return float2((ndc.x * 0.5f) + 0.5f, 0.5f - (ndc.y * 0.5f));
 }
+#endif
 
 float3 AddBloomGlare(float3 color, float2 uv, float4 projected_position) {
 #if TONEMAPPER_USE_GLARE
